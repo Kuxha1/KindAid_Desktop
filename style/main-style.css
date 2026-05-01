@@ -1,0 +1,501 @@
+       /* --- Root Color Palette --- */
+:root {
+    /* Primary (Purple) */
+    --primary: #610C9F;
+    --primary-light: #8C3FD4;
+    --primary-soft: #C9A6F2;
+    --primary-dark: #470877;
+    --primary-hover: #7323B5;
+
+    /* Secondary (Navy/Teal) */
+    --secondary: #1E3A8A;
+    --secondary-light: #3556A8;
+    --secondary-soft: #90A8D8;
+    --secondary-dark: #15285E;
+    --secondary-hover: #274B96;
+
+    /* Accent (Support Teal) */
+    --accent: #54C6EB;
+    --accent-light: #7DDCFC;
+    --accent-soft: #C6F1FF;
+    --accent-dark: #3BA6C8;
+    --accent-hover: #4DB5D7;
+
+    /* Functional */
+    --success: #16A34A;
+    --warning: #F59E0B;
+    --error: #DC2626;
+    --error-dark: #991B1B;
+
+    /* Neutrals */
+    --bg-main: #F8FAFC;
+    --text-main: #222222;
+    --gray-100: #F1F5F9;
+    --gray-200: #E2E8F0;
+    --gray-300: #CBD5E1;
+    --gray-700: #334155;
+    --white: #ffffff;
+}
+       
+       * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .login-card {
+            background-color: #FFFFFF;
+            width: 100%;
+            max-width: 400px;
+            padding: 3.5rem 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        /* Icon Circle */
+        .user-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            background-color: var(--gray-100);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 1.5rem auto;
+        }
+
+        .user-icon-wrapper i {
+            font-size: 32px;
+            color: var(--secondary-dark); /* Using Secondary Dark for the icon line */
+            opacity: 0.6;
+        }
+
+        /* Heading */
+        h1 {
+            font-family: 'Playfair Display', serif;
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            font-weight: 600;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            background-color: var(--bg-main); /* Using Gray 50 as per image look */
+            border: 1px solid transparent;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            color: var(--primary-dark);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input::placeholder {
+            color: var(--text-muted);
+        }
+
+        input:focus {
+            background-color: #FFFFFF;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(84, 198, 235, 0.1); /* Accent Soft glow */
+        }
+
+        /* Button */
+        .btn{
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* Footer Link */
+        .forget-pass {
+            display: block;
+            margin-top: 2rem;
+            color: var(--secondary-dark);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .forget-pass:hover {
+            color: var(--secondary);
+            text-decoration: underline;
+
+        }
+
+        /* ===============================
+   ROLE SELECTION STYLING
+=================================*/
+
+.role-selection {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin: 20px 0;
+}
+
+.role-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--gray-700);
+    transition: color 0.3s ease;
+}
+
+.role-option input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.role-option:hover {
+    color: var(--primary);
+}
+
+
+/* ===============================
+   FILE UPLOAD BUTTON STYLING
+=================================*/
+
+.file-upload-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+
+}
+
+.file-box input[type="file"] {
+    display: none;
+}
+
+.file-box label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px;
+    background-color: var(--secondary);
+    color: white;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.file-box label:hover {
+    background-color: var(--secondary-hover);
+    transform: translateY(-2px);
+}
+
+.file-box label:active {
+    transform: scale(0.97);
+}
+
+/* ===============================
+   MOBILE RESPONSIVE
+=================================*/
+
+@media (max-width: 480px) {
+    .file-upload-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .role-selection {
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+    }
+}
+
+
+/* ==============================
+   DASHBOARD LAYOUT
+============================== */
+
+.dashboard {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* ==============================
+   SIDEBAR
+============================== */
+
+.sidebar {
+    width: 250px;
+    background: var(--secondary-dark);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.logo img {
+    width: 140px;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.nav-item {
+    padding: 10px;
+    text-decoration: none;
+    color: var(--gray-300);
+    border-radius: 6px;
+    transition: 0.3s;
+}
+
+.nav-item:hover {
+    background: var(--secondary-hover);
+    color: white;
+}
+
+.nav-item.active {
+    background: var(--primary);
+    color: white;
+}
+
+.logout {
+    margin-top: auto;
+    padding-top: 20px;
+    font-weight: bold;
+}
+
+/* ==============================
+   MAIN CONTENT
+============================== */
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* HEADER */
+.top-header {
+    background: var(--white);
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.search-box {
+    width: 50%;
+    padding: 10px;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+}
+
+.profile-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+/* ==============================
+   FEED SECTION
+============================== */
+
+.feed {
+    padding: 30px;
+}
+
+.page-title h2 {
+    font-size: 26px;
+    color: var(--primary-dark);
+}
+
+.page-title p {
+    color: var(--gray-700);
+    margin-bottom: 20px;
+}
+
+/* ==============================
+   POST CARD
+============================== */
+
+.post-card {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid var(--gray-200);
+    margin-bottom: 20px;
+}
+
+.post-header {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.post-logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+}
+
+.post-text {
+    margin: 15px 0;
+    color: var(--gray-700);
+}
+
+/* PROGRESS */
+.progress-box {
+    background: var(--gray-100);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background: var(--gray-300);
+    border-radius: 20px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 20px;
+}
+
+/* ═══════════════════════════════════════
+   SIDEBAR MOBILE OVERLAY
+═══════════════════════════════════════ */
+
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 40;
+    display: none;
+    backdrop-filter: blur(2px);
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE IMPROVEMENTS
+═══════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+    /* Reduce padding on tablets */
+    main.p-8, .p-8 {
+        padding: 16px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Stack header elements better on mobile */
+    header {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+
+    /* Better card spacing on mobile */
+    .grid.grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Login/Register cards responsive */
+    .login-card, .register-card {
+        margin: 16px;
+        padding: 24px;
+        width: calc(100% - 32px);
+        max-width: 420px;
+    }
+
+    /* Header user info */
+    .flex.items-center.gap-4.ml-4 {
+        gap: 8px;
+        margin-left: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Extra small screen adjustments */
+    .login-card, .register-card {
+        padding: 20px;
+        border-radius: 16px;
+    }
+
+    .login-card h2, .register-card h2 {
+        font-size: 20px;
+    }
+
+    .login-card input, .register-card input,
+    .login-card select, .register-card select {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .login-card button, .register-card button {
+        padding: 12px;
+        font-size: 14px;
+    }
+}
+
+/* ═══════════════════════════════════════
+   FORGOT PASSWORD PAGE STYLES 
+═══════════════════════════════════════ */
+
+.forget-pass {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.forget-pass:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}

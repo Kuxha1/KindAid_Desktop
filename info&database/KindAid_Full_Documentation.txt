@@ -1,0 +1,852 @@
+================================================================================
+KIND-AID: COMPREHENSIVE SYSTEM ARCHITECTURE & DOCUMENTATION
+================================================================================
+
+TABLE OF CONTENTS
+1. Project Vision & Scope
+2. High-Level Architecture & Tech Stack
+3. Database Design & Entity Relationships
+4. Core User Roles & Permissions Matrix
+5. Detailed Feature Specifications (Mobile & Web)
+6. API Design & Security Standards
+7. UI/UX Style Guide & Design System
+8. AI Integration Specifics (Gemini Chatbot)
+9. Deployment, Local Setup, & Synchronization
+10. Known Issues & Future Roadmaps
+
+================================================================================
+1. PROJECT VISION & SCOPE
+================================================================================
+
+The KindAid: Donation & Service Contribution System addresses a critical gap in 
+charitable networking. By unifying NGOs, volunteers, and private citizens onto a 
+single platform, the system prevents siloed charity efforts. 
+
+Its primary mission is to:
+- Connect donors directly with verified fundraisers.
+- Provide geographical visibility of immediate service and material needs.
+- Foster community discourse between verified NGOs and everyday volunteers.
+- Provide real-time data monitoring for platform administrators.
+
+================================================================================
+2. HIGH-LEVEL ARCHITECTURE & TECH STACK
+================================================================================
+
+The project operates strictly over a Client-Server Architecture (REST).
+
+2.1 Frontend: Mobile Application (Flutter)
+- Language: Dart
+- State Management: Uses structured Models and Providers to handle system states.
+- Network Layer: Uses the `http` package directed through `lib/core/api_service.dart`.
+- File Uploads: Uses `image_picker` and HTTP Multi-part formatted requests.
+- Maps: Integrates `google_maps_flutter` SDK with platform API keys.
+
+2.2 Frontend: Web Dashboard (Admin Panel)
+- Structure: HTML5 semantics, CSS3, Vanilla JavaScript.
+- Backend Engine: Vanilla PHP 8+ handling Session logic and API routing.
+- Responsive Logic: Custom CSS utilizing CSS Grid, Flexbox, media queries.
+- UI Capabilities: Chart rendering for metrics, AJAX calls for non-blocking UI.
+
+2.3 Backend API / Server
+- Language: PHP (REST API Frameworkless)
+- Role: Processes SQL queries, validates user data, sanitizes inputs, responds 
+  exclusively in JSON format.
+- Authentication: Secure password hashing (bcrypt), PHP-based Session handling 
+  for web, and ID-tokening / OTP generation for mobile login.
+- Email Server: Integrated PHPMailer for secure OTP delivery to verified emails.
+
+2.4 Database (MySQL: `kindaid.sql`)
+- Engine: InnoDB (for complex mapping and Foreign Key constraint handling).
+- The exact same relational database is accessed by the PHP Web interface and 
+  the PHP REST API, ensuring 0% data lag/desync between app and website.
+
+================================================================================
+3. DATABASE DESIGN
+================================================================================
+
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Host: 127.0.0.1:3307
+-- Generation Time: Apr 10, 2026 at 05:43 PM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Database: `kindaid`
+--
+
+CREATE DATABASE IF NOT EXISTS `kindaid`;
+USE `kindaid`;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `accounts`
+--
+
+CREATE TABLE `accounts` (
+  `account_id` int(11) NOT NULL,
+  `account_type` enum('User','NGO') NOT NULL,
+  `name` varchar(150) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `contact_no` varchar(15) DEFAULT NULL,
+  `password` varchar(255) NOT NULL,
+  `address` varchar(255) DEFAULT NULL,
+  `profile_photo` varchar(255) DEFAULT NULL,
+  `bio` text DEFAULT NULL,
+  `verified_status` enum('Pending','Verified','Rejected') DEFAULT 'Pending',
+  `document_1` varchar(255) DEFAULT NULL,
+  `document_2` varchar(255) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `reset_otp` varchar(10) DEFAULT NULL,
+  `otp_expires_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `admins`
+--
+
+CREATE TABLE `admins` (
+  `admin_id` int(11) NOT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `role` enum('SuperAdmin','Moderator') DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `admins`
+--
+
+INSERT INTO `admins` (`admin_id`, `name`, `email`, `password`, `role`, `created_at`) VALUES
+(1, 'Kushal', 'k@gmail.com', '123456', 'SuperAdmin', '2026-04-05 22:11:21'),
+(2, 'Admin', 'a@gmail.com', '123456', 'Moderator', '2026-03-27 10:54:22');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `comments`
+--
+
+CREATE TABLE `comments` (
+  `comment_id` int(11) NOT NULL,
+  `post_id` int(11) NOT NULL,
+  `account_id` int(11) NOT NULL,
+  `comment_text` text DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `community_forum`
+--
+
+CREATE TABLE `community_forum` (
+  `post_id` int(11) NOT NULL,
+  `account_id` int(11) NOT NULL,
+  `description` text DEFAULT NULL,
+  `image_1` varchar(255) DEFAULT NULL,
+  `image_2` varchar(255) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `status` enum('Active','Reported','Removed') DEFAULT 'Active',
+  `likes` int(11) DEFAULT 0,
+  `liked_users` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `fundraiser`
+--
+
+CREATE TABLE `fundraiser` (
+  `fundraiser_id` int(11) NOT NULL,
+  `account_id` int(11) NOT NULL,
+  `title` varchar(150) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `goal_amount` decimal(12,2) NOT NULL,
+  `collected_amount` decimal(12,2) DEFAULT 0.00,
+  `image_1` varchar(255) DEFAULT NULL,
+  `image_2` varchar(255) DEFAULT NULL,
+  `document_1` varchar(255) DEFAULT NULL,
+  `document_2` varchar(255) DEFAULT NULL,
+  `verified_status` enum('Pending','Verified','Rejected') DEFAULT 'Pending',
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `geo_locations`
+--
+
+CREATE TABLE `geo_locations` (
+  `geo_id` int(11) NOT NULL,
+  `account_id` int(11) NOT NULL,
+  `latitude` decimal(10,7) DEFAULT NULL,
+  `longitude` decimal(10,7) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `goal_status` enum('Pending','Ongoing','Completed') DEFAULT 'Pending',
+  `created_at` datetime DEFAULT current_timestamp(),
+  `geo_type` enum('ADDRESS','MARK') NOT NULL,
+  `image_1` varchar(255) DEFAULT NULL,
+  `image_2` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `needs`
+--
+
+CREATE TABLE `needs` (
+  `need_id` int(11) NOT NULL,
+  `account_id` int(11) NOT NULL,
+  `goal_title` varchar(150) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `image_1` varchar(255) DEFAULT NULL,
+  `image_2` varchar(255) DEFAULT NULL,
+  `goal_status` enum('Pending','Ongoing','Fulfilled') DEFAULT 'Pending',
+  `created_at` datetime DEFAULT current_timestamp(),
+  `progress_percent` int(11) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `reports`
+--
+
+CREATE TABLE `reports` (
+  `report_id` int(11) NOT NULL,
+  `reported_by` int(11) NOT NULL,
+  `target_type` enum('Account','need','Post','Fundraiser','Comment','location') DEFAULT NULL,
+  `target_id` int(11) DEFAULT NULL,
+  `reason` text DEFAULT NULL,
+  `status` enum('Pending','Reviewed','Action_Taken') DEFAULT 'Pending',
+  `created_at` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `transactions`
+--
+
+CREATE TABLE `transactions` (
+  `transaction_id` int(11) NOT NULL,
+  `fundraiser_id` int(11) NOT NULL,
+  `donor_id` int(11) NOT NULL,
+  `amount` decimal(12,2) NOT NULL,
+  `payment_method` enum('Online','UPI','Card') DEFAULT NULL,
+  `payment_status` enum('Pending','Completed','Failed') DEFAULT 'Pending',
+  `transaction_date` datetime DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `accounts`
+--
+ALTER TABLE `accounts`
+  ADD PRIMARY KEY (`account_id`),
+  ADD UNIQUE KEY `email` (`email`);
+
+--
+-- Indexes for table `admins`
+--
+ALTER TABLE `admins`
+  ADD PRIMARY KEY (`admin_id`),
+  ADD UNIQUE KEY `email` (`email`);
+
+--
+-- Indexes for table `comments`
+--
+ALTER TABLE `comments`
+  ADD PRIMARY KEY (`comment_id`),
+  ADD KEY `post_id` (`post_id`),
+  ADD KEY `account_id` (`account_id`);
+
+--
+-- Indexes for table `community_forum`
+--
+ALTER TABLE `community_forum`
+  ADD PRIMARY KEY (`post_id`),
+  ADD KEY `account_id` (`account_id`);
+
+--
+-- Indexes for table `fundraiser`
+--
+ALTER TABLE `fundraiser`
+  ADD PRIMARY KEY (`fundraiser_id`),
+  ADD KEY `account_id` (`account_id`);
+
+--
+-- Indexes for table `geo_locations`
+--
+ALTER TABLE `geo_locations`
+  ADD PRIMARY KEY (`geo_id`),
+  ADD KEY `account_id` (`account_id`);
+
+--
+-- Indexes for table `needs`
+--
+ALTER TABLE `needs`
+  ADD PRIMARY KEY (`need_id`),
+  ADD KEY `account_id` (`account_id`);
+
+--
+-- Indexes for table `reports`
+--
+ALTER TABLE `reports`
+  ADD PRIMARY KEY (`report_id`),
+  ADD KEY `reported_by` (`reported_by`);
+
+--
+-- Indexes for table `transactions`
+--
+ALTER TABLE `transactions`
+  ADD PRIMARY KEY (`transaction_id`),
+  ADD KEY `fundraiser_id` (`fundraiser_id`),
+  ADD KEY `donor_id` (`donor_id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `accounts`
+--
+ALTER TABLE `accounts`
+  MODIFY `account_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+
+--
+-- AUTO_INCREMENT for table `admins`
+--
+ALTER TABLE `admins`
+  MODIFY `admin_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+
+--
+-- AUTO_INCREMENT for table `comments`
+--
+ALTER TABLE `comments`
+  MODIFY `comment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+
+--
+-- AUTO_INCREMENT for table `community_forum`
+--
+ALTER TABLE `community_forum`
+  MODIFY `post_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+
+--
+-- AUTO_INCREMENT for table `fundraiser`
+--
+ALTER TABLE `fundraiser`
+  MODIFY `fundraiser_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+
+--
+-- AUTO_INCREMENT for table `geo_locations`
+--
+ALTER TABLE `geo_locations`
+  MODIFY `geo_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+
+--
+-- AUTO_INCREMENT for table `needs`
+--
+ALTER TABLE `needs`
+  MODIFY `need_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+
+--
+-- AUTO_INCREMENT for table `reports`
+--
+ALTER TABLE `reports`
+  MODIFY `report_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+
+--
+-- AUTO_INCREMENT for table `transactions`
+--
+ALTER TABLE `transactions`
+  MODIFY `transaction_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `comments`
+--
+ALTER TABLE `comments`
+  ADD CONSTRAINT `comments_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `community_forum` (`post_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `comments_ibfk_2` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`account_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `community_forum`
+--
+ALTER TABLE `community_forum`
+  ADD CONSTRAINT `community_forum_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`account_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `fundraiser`
+--
+ALTER TABLE `fundraiser`
+  ADD CONSTRAINT `fundraiser_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`account_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `geo_locations`
+--
+ALTER TABLE `geo_locations`
+  ADD CONSTRAINT `geo_locations_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`account_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `needs`
+--
+ALTER TABLE `needs`
+  ADD CONSTRAINT `needs_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`account_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `reports`
+--
+ALTER TABLE `reports`
+  ADD CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`reported_by`) REFERENCES `accounts` (`account_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `transactions`
+--
+ALTER TABLE `transactions`
+  ADD CONSTRAINT `transactions_ibfk_1` FOREIGN KEY (`fundraiser_id`) REFERENCES `fundraiser` (`fundraiser_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `transactions_ibfk_2` FOREIGN KEY (`donor_id`) REFERENCES `accounts` (`account_id`) ON DELETE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+
+================================================================================
+4. CORE USER ROLES & PERMISSIONS MATRIX
+================================================================================
+
+4.1 Users (Standard Accounts)
+- Registration: Name, Email, Address, Password. Verified via Email OTP.
+- Capabilities: 
+  * Post in Community
+  * Create Need Requests (e.g. "I need 10 blankets")
+  * Pin points on Geo-Visibility map
+  * Donate to Fundraisers (Update fundraiser current amounts)
+  * AI Chatbot Assistance
+
+4.2 NGOs (Organization Accounts)
+- Registration: Same as Users + REQUIRED upload of 2 Verification Documents.
+- Verification State: Initially marked as "Pending" in the database. Once Admin 
+  flags as "Verified", the NGO receives a badge.
+- Capabilities: 
+  * All standard user abilities.
+  * Start large scale financial Fundraisers.
+  * Appear distinctly on the Geo-Map as an Organizational Hub.
+
+4.3 System Admin (Web Only)
+- Registration: Pre-seeded into DB (Cannot be registered publicly).
+- Capabilities:
+  * Approve / Reject NGO Documents.
+  * Ban / Delete Accounts violating ToS.
+  * Moderate and Delete any Post, Fundraiser, or Geo-Pin.
+  * View backend metric dashboards.
+
+================================================================================
+5. DETAILED FEATURE SPECIFICATIONS (MOBILE & WEB)
+================================================================================
+
+5.1 Authentication Flow (OTP)
+1. User submits data. Backend creates an OTP and stores it transiently.
+2. PHPMailer dispatches a customized HTML email containing the OTP.
+3. Mobile app opens OTP screen. User submits OTP.
+4. If correct, the account is activated, and JSON login payload returns to app.
+
+5.2 Community Forum Workflow
+- Flutter App requests GET `/community/get_posts.php`.
+- UI renders a feed using modern `post_card` Shimmer loading layouts.
+- Users can upload up to 2 images. Flutter compresses these images via plugin 
+  before transmission.
+- API accepts `multipart/form-data`, saves files to relative `/uploads/` dir, 
+  and inserts DB record.
+
+5.3 Fundraisers & Need Models
+- Unlike Forum Posts, Fundraisers have mathematical bounds (`current_amount` <= `target`).
+- Mobile UI presents an Animated Progress Bar based on `(current/target) * 100`.
+- Only authors of the content see "Edit/Delete" widgets inside the detail screen 
+  (Feature parity validation checking `currentUser.id == post.owner_id`).
+
+5.4 Geo-Visibility Map
+- Implements `google_maps_flutter`. 
+- Upon map initialization, Flutter fetches GET `/geo/get_locations.php`.
+- The map renders custom markers: Purple for Verified NGOs, Orange/Red for 
+  urgent Needs.
+- Tapping a marker expands a BottomSheet revealing photos, description, and an 
+  actionable button (e.g., "Help Now").
+
+================================================================================
+6. API DESIGN & SECURITY STANDARDS
+================================================================================
+API Path Configuration: All API requests hit `http://{server_ip}/KindAid/api/...`
+
+Security Standards:
+- Standardized Output: API scripts strictly header as `application/json`.
+- Fail-Safes: PHP endpoints validate `empty()` against all $_POST fields.
+- Type Safety: Mobile app parses JSON into statically-typed Dart classes 
+  (e.g., `UserModel`, `FundraiserModel`) to prevent runtime null errors.
+- Image Handling: API assigns unique unix timestamps to filename uploads to 
+  prevent overwriting (`time()_filename.jpg`).
+
+Sample Endpoint Map:
+- POST `/auth/register.php` (Creates user)
+- POST `/auth/login.php` (Validates and returns User Data)
+- POST `/auth/send_otp.php` (Fires PHPMailer)
+- GET `/feed/get_all.php` (Retrieves generic posts)
+
+================================================================================
+7. UI/UX STYLE GUIDE & DESIGN SYSTEM
+================================================================================
+
+7.1 Branding Core
+- Primary Font Family: "Inter" Font (Google Fonts).
+- Aesthetic Focus: Clean spacing, subtle shadows, glassmorphic overlays in dark mode,
+  and highly semantic color coding.
+
+7.2 Exact Color Specifications
+
+Primary Theme Axis:
+- Main Purple (#610C9F) / Hover: #7323B5 / Background Tint: #C9A6F2
+- Deep Navy    (#1E3A8A) / Hover: #274B96 / Background Tint: #90A8D8
+- Support Teal (#54C6EB)
+
+State Context Colors:
+- SUCCESS (#16A34A): Verified Badges, Full Progress Bars, Approvals.
+- WARNING (#F59E0B): Pending NGO Docs, Urgent map markers.
+- ERROR/DESTRUCTIVE (#DC2626): Delete buttons, failure alerts.
+
+Neutral UI Base:
+- Scaffold Background: #F8FAFC (Mobile)
+- Web Admin Sidebar: #1E293B (Dark Gray)
+- Text Defaults: #222222 (Titles), #475569 (Subtitles)
+
+7.3 UI Component Rules
+- Cards: Must have an elevation 2-4 shadow, border-radius of 12px (web) or 16px
+  (Flutter).
+- Inputs: Unfocused inputs use a solid pale grey (#F1F5F9). Focused inputs form
+  a 2px solid boundary using Main Purple (#610C9F).
+- Feedback: Every action must return a Snackbar (Flutter) or a Toast (Web Admin).
+
+================================================================================
+8. AI INTEGRATION SPECIFICS (GEMINI CHATBOT)
+================================================================================
+
+Intent: A smart virtual helper for users to query platform data and navigate.
+Location: Accessed via a Floating Action Button in the mobile profile screen.
+
+Capabilities & Architecture:
+- Provider: Google Gemini AI (REST API via Dart).
+- Local Integration: The NLP engine is built into the Flutter app (`api_service.dart`).
+- Data Flow:
+  1. User asks: "Are there homeless shelters nearby?"
+  2. Flutter sends Context Window prompt + User Query to Gemini.
+  3. Context Window tells Gemini to behave as KindAid Assistant, format its 
+     response, and trigger internal routing if the user asks for DB-heavy data.
+  4. If Gemini fails or context is too localized, the chatbot falls back to 
+     a local PHP API query to parse simple DB parameters.
+- UI Design: Renders custom chat bubbles, interactive chips ("Show me NGOs", 
+  "Navigate to Profile"), and shimmer loading while awaiting the AI.
+
+================================================================================
+9. DEPLOYMENT, LOCAL SETUP, & SYNCHRONIZATION
+================================================================================
+
+9.1 Database Unification Architecture
+- The absolute rule of KindAid is Single-Source-of-Truth. 
+- Mobile and Web MUST use the identical database instance.
+
+9.2 Step-by-Step Developer Setup
+1. Mount XAMPP. Drop `KindAid` folder into `C:/xampp/htdocs/`.
+2. Secure the database: Open phpMyAdmin -> Import `kindaid.sql`.
+3. Check web application connection via `http://localhost/KindAid/admin`.
+
+9.3 Connecting Flutter Device to Backend
+- **For Android Studio Emulator:**
+  Open `api_service.dart` -> Set `baseUrl = 'http://10.0.2.2/KindAid/api/'`
+  (10.0.2.2 routes local emulator traffic back to the XAMPP host).
+  
+- **For Physical Android/iOS Device:**
+  Open Windows CMD -> type `ipconfig`. Find IPv4 Address (e.g., 192.168.1.x).
+  Open `api_service.dart` -> Set `baseUrl = 'http://192.168.1.x/KindAid/api/'`.
+  Ensure Firewall allows port 80 (Apache).
+
+================================================================================
+10. MAINTENANCE & SYSTEM ROADMAP
+================================================================================
+
+10.1 Key Known Rules
+- A map marker must NEVER be deleted directly if payment logs are attached.
+- When an account is deleted, it triggers a warning modal to prevent accidental data loss.
+- Always run `flutter clean` before changing network architectures or IPs.
+
+10.2 Future Extensions
+- Payment Gateway Integration: Bind Stripe/PayPal direct links to the Fundraiser UI.
+- Push Notifications: Integrate Firebase Cloud Messaging (FCM) when community 
+  members comment on a post.
+- Dynamic DB Migration Scripts: Prevent manual SQL imports during production deployment.
+
+
+================================================================================
+11. AI PROMPT FOR KINDAID
+================================================================================
+
+Create a comprehensive Donation & Service Contribution System called "KindAid". This system will consist of a Mobile Application for general users/NGOs and a Web-based Admin Panel. 
+Both platforms must connect to a single, unified MySQL database (`kindaid.sql`) via a PHP REST API.
+
+
+The KindAid: Donation & Service Contribution System is a platform that connects NGOs, donors, and volunteers while also enabling users to help each other.
+System:
+
+--- 1. TECHNOLOGY STACK ---
+- Mobile App: Flutter (Dart) using Provider/Riverpod for state management, `http` for API calls, and Google Maps SDK.
+- Web Admin: HTML5, CSS3 (Modern, Responsive), Vanilla JavaScript, PHP 8+ (Session-based).
+- Backend API: Frameworkless PHP (handling JSON requests/responses and multipart image uploads).
+- Database: MySQL.
+- AI Integration: Google Gemini API (for an in-app smart assistant).
+
+--- 2. DESIGN SYSTEM & UI/UX ---
+- font-: 'Inter', sans-serif;
+-Primary: #610C9F (Deep Purple)
+-Secondary: #1E3A8A (Deep Teal/Navy)
+-Accent: #54C6EB (Support Teal)
+-Background: #F8FAFC
+-Text: #222222
+
+-Primary Shades (Purple)
+-Use for buttons, highlights, active tabs.
+-Primary Light: #8C3FD4
+-Primary Soft: #C9A6F2
+-Primary Dark: #470877
+-Primary Hover: #7323B5
+
+-Secondary Shades (Navy/Teal)
+-Use for headers, sidebar backgrounds, cards, icons.
+-Secondary Light: #3556A8
+-Secondary Soft: #90A8D8
+-Secondary Dark: #15285E
+-Secondary Hover: #274B96
+
+-Accent Shades (Support Teal)
+-Use for notifications, progress bars, charts, CTA areas.
+-Accent Light: #7DDCFC
+-Accent Soft: #C6F1FF
+-Accent Dark: #3BA6C8
+-Accent Hover: #4DB5D7
+
+-Functional Colors
+-These keep UI consistent for alerts, success, errors, warnings.
+-Success (Donations completed, volunteer accepted, good status)
+-Success Base: #16A34A
+-Success Light: #86EFAC
+-Success Dark: #0F7A36
+
+-Warning (Pending approval, waiting, reminders)
+-Warning Base: #F59E0B
+-Warning Light: #FDE68A
+-Warning Dark: #B45309
+
+-Error (Failed donation, form error, invalid action)
+-Error Base: #DC2626
+-Error Light: #FCA5A5
+-Error Dark: #991B1B
+
+-Neutral Colors (Cards, borders, backgrounds)
+-Gray Scale
+-Gray 50: #F8FAFC (your main background)
+-Gray 100: #F1F5F9
+-Gray 200: #E2E8F0
+-Gray 300: #CBD5E1
+-Gray 400: #94A3B8
+-Gray 500: #64748B
+-Gray 600: #475569
+-Gray 700: #334155
+-Gray 800: #1E293B
+-Gray 900: #0F172A
+
+--- 3. USER ROLES ---
+1. Standard User: Can post needs, interact on the community forum, donate, and use the AI Chatbot. Requires Email OTP verification (via PHPMailer) upon registration.
+2. NGO: Same as users but can create monetary Fundraisers. During registration, must upload 2 verification documents. Profile gets a "Pending" status until Admin approves.
+3. Administrator (Web only): Manages the platform, moderates content, and verifies NGOs.
+
+--- 4. MOBILE APP PAGES & FEATURES (FLUTTER) ---
+1. Authentication (Login / Register / OTP):
+- Ask if the user is registering as "User" or "NGO". 
+- Collect Name, Address, Password, Email. If NGO, include a file-picker for 2 verification documents.
+- Implement an Email OTP verification screen using a backend PHPMailer endpoint.
+
+2. Profile Page:
+- Displays user photo, bio, email, and a tabbed view of their created "Community Posts", "Fundraisers", and "Needs".
+- Has an "Edit Profile" capability.
+- Includes a Floating Action Button connecting to the "KindAid AI Chatbot".
+
+3. Community Forum Page:
+- A social feed where users/NGOs post updates. 
+- A post contains text and up to 2 images.
+- Include a comment section and modern `post_card` UI.
+
+4. Fundraiser Page:
+- A page specifically for raising money.
+- Creation form requires: Title, Description, Target Amount, document/proof of legitimacy, and 2 images.
+- Feed displays Fundraiser Cards with animated visual progress bars (Current Amount vs Target Amount).
+- Include a "Donate" button feature to increment the current amount (update via API).
+
+5. Needs (Material Requests) Page:
+- Similar to Fundraisers, but for items/volunteers (e.g., "Need 1000 books", "Need 5 volunteers").
+- Displays the target item/quantity and current received item count.
+
+6. Geo-Visibility (Interactive Map) Page:
+- A full-screen Google Maps integration.
+- Custom Map Markers: Purple markers for Verified NGOs. Orange markers for Urgent Help Requests (pinned by users).
+- Clicking a marker opens a bottom sheet showing the location's images, description, status, and an actionable "Help" button. 
+
+7. Detail Pages & Moderation parity:
+- Every Post, Fundraiser, and Need has a detailed view.
+- If the current logged-in user is the creator of the post, show "Edit" and "Delete" buttons inside the detail view. Otherwise, show a "Report" button.
+
+8. KindAid AI Chatbot Screen:
+- A beautiful chat interface powered by the Gemini API.
+- The chatbot acts as a platform guide, processing smart search queries natively, rendering suggestions chips, and providing local navigation help.
+
+--- 5. WEB ADMIN PANEL PAGES & FEATURES (PHP/HTML) ---
+1. Dashboard:
+- Data graphs showing metrics like user registrations and total donations.
+- Quick system monitoring statistics.
+
+2. Verification Page:
+- A table listing all "Pending" NGOs. Provide a UI to view/download their uploaded verification documents.
+- Buttons to "Approve" (grants Verified badge) or "Reject".
+
+3. Content Moderation:
+- Data tables for Community Posts, Fundraisers, and Needs.
+- Super-admin rights to Delete posts or Ban reported accounts.
+
+--- 6. BACKEND API REQUIREMENTS (PHP) ---
+- Strictly use Single-Source-of-Truth: Web and Mobile interact with the same database.
+- Create REST endpoints for `/auth/login`, `/auth/register`, `/auth/send_otp`, `/community/get_posts`, `/fundraiser/create`, `/geo/get_locations`, etc.
+- Handle `multipart/form-data` for image uploads. Save images in an `/uploads/` folder and store relative paths in MySQL.
+- APIs must respond strictly in JSON format.
+
+--- 7. DATABASE SCHEMA REQUIREMENTS ---
+- Accounts Table (type, verification status, credentials).
+- Posts Table (Foreign key to Account).
+- Fundraisers Table (current_amount, target_amount, images, docs).
+- Needs Table.
+- Geo_Locations Table (lat, lng, status).
+
+
+Please write the complete code sequentially, separated by feature and platform, ensuring secure database practices and responsive Flutter layouts as per the instructions above.
+
+
+================================================================================
+12. HOW TO RUN THE APPLICATION (MOBILE VERSION) AND WEB VERSION
+================================================================================
+
+Database Synchronization Method Web on One Laptop, Mobile on Another
+
+Step 1: Extract zip inside 
+
+-C:\xampp\htdocs\
+-open C:\xampp\htdocs\KindAid\admin\config
+-Change info in db.php or db0.php file according to your database
+
+
+
+Step 2:Add Database in phpMyAdmin
+
+-import kindaid.sql file in phpMyAdmin
+
+
+
+Step 3(Optional): Change credentials in Admin table
+
+-Open C:\xampp\htdocs\KindAid\info&database\kindaid.sql
+-Change credentials in Admin table line 67 to 69
+-INSERT INTO `admins` (`admin_id`, `name`, `email`, `password`, `role`, `created_at`) VALUES
+(1, 'Kushal', 'k@gmail.com', '123456', 'SuperAdmin', '2026-04-05 22:11:21'),
+(2, 'Admin', 'a@gmail.com', '123456', 'Moderator', '2026-03-27 10:54:22');
+
+
+
+Step 4: Find your PC IP Address
+
+-Open cmd type" ipconfig
+-Find something like ipv4: 192.168.1.5
+
+
+
+Step 5: Open Flutter
+
+-Open this file api_service.dart 
+C:\xampp\htdocs\KindAid\kindaid_app\lib\core\api_service.dart
+-Change _lanIp String according to your PC IP Address
+-more info in api_service.dart file from line 10 to 30
+
+
+
+Step 6: Change SMTP Server
+
+-Open C:\xampp\htdocs\KindAid\mobile_api\auth\forgot_password.php
+-Change SMTP Server Info in forgot_password.php file 
+define('SMTP_USERNAME', 'your email');   // Gmail address
+define('SMTP_PASSWORD', 'your password'); // ← paste 16-char App Password here
+define('SMTP_FROM', 'your email');   // Gmail address
+define('SMTP_FROM_NAME', 'your app name');
+
+
+
+Step 7: Change API for AI chatbot
+
+-Open the chatbot_screen.dart file in C:\xampp\htdocs\KindAid\kindaid_app\lib\chatbot\chatbot_screen.dart
+-Change _kGeminiApiKey and _kGeminiBaseUrl according to your API from https://aistudio.google.com/api-keys
+
+
+
+Step 8: Run Flutter
+
+Now connect mobile to your PC through USB debugging mode or Wifi debugging mode. 
+-Open cmd in C:\xampp\htdocs\KindAid\kindaid_app in flutter
+-Run this command "flutter run"
+
+
+
+Step 9: Open Admin Panel
+
+-Open browser and type this url "http://localhost/KindAid/"
+-press Admin_login button
+-Login with admin credentials
+-Admin credentials are in admin table of kindaid.sql file 
+-if you skip step 3 then find your own credentials in admin table of kindaid.sql file from line 67 to 69 or view Step 3
+-Else enter your own credentials according to your database
+
+
+================================================================================
+FOR MORE INFO CONTACT proton.0900@gmail.com
+================================================================================
